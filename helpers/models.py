@@ -116,6 +116,22 @@ def get_activations():
 
     return hook
 
+
+def get_layer_by_name(model, layer_name):
+    current_layer = model
+    layer_names = layer_name.split('_')
+    
+    for name in layer_names:
+        if isinstance(current_layer, nn.Module):
+            current_layer = getattr(current_layer, name, None)
+        else:
+            raise ValueError(f"Layer '{layer_name}' not found in the model.")
+
+        if current_layer is None:
+            raise ValueError(f"Layer '{layer_name}' not found in the model.")
+
+    return current_layer
+
 def get_activation_shape():
     return hook_activations.squeeze().size()
 
@@ -137,11 +153,12 @@ def get_feature_map_sizes(img, model, layers):
 
     index=0
     for layer in layers:
-        hook = layer.register_forward_hook(get_activations())
-        model(img)
-        feature_map_sizes[index] = get_activation_shape()
+        if isinstance(layer, nn.Conv2d):
+            hook = layer.register_forward_hook(get_activations())
+            model(img)
+            feature_map_sizes[index] = get_activation_shape()
+            hook.remove()
         index+=1
-        hook.remove()
     
     return feature_map_sizes
 
