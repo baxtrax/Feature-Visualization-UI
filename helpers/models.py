@@ -3,9 +3,11 @@
 
 import os
 import torch
+import helpers.manipulation as h_manipulation
 from enum import Enum
 from torchvision import models
 from torch import nn, load, hub
+
 
 class ModelTypes(Enum):
     """
@@ -143,7 +145,7 @@ def get_layer_by_name(model, layer_name):
     return current_layer
 
 
-def get_feature_map_sizes(img, model, layers):
+def get_feature_map_sizes(model, layers, img=None):
     """
     Gets the feature map sizes, used to dynamically limit values on the 
     interface.
@@ -153,7 +155,13 @@ def get_feature_map_sizes(img, model, layers):
     :return: Feature map sizes
     """
     feature_map_sizes = [None] * len(layers)
-    img = img.unsqueeze(0)
+
+    if img is None:
+        img = h_manipulation.create_random_image((227, 227),
+            h_manipulation.DatasetNormalizations.CIFAR10_MEAN.value,
+            h_manipulation.DatasetNormalizations.CIFAR10_STD.value).clone()
+    else:
+        img = img.unsqueeze(0)
 
     # Use GPU if possible
     train_on_gpu = torch.cuda.is_available()
