@@ -1,5 +1,5 @@
-from enum import Enum
 import torch
+from enum import Enum
 from torchvision import transforms
 
 # CIFAR10 Normalization values
@@ -11,23 +11,6 @@ class DatasetNormalizations(Enum):
     CIFAR10_MEAN = [0.49139968, 0.48215827, 0.44653124]
     CIFAR10_STD = [0.24703233, 0.24348505, 0.26158768]
 
-
-def tensor_to_numpy_img(tensor, denorm):
-    """
-    Converts tenstor to a numpy img (used for saving images)
-
-    :param tensor: The tensor to convert
-    :param denorm: Whether to denormalize the img/tensor
-    :return: The numpy img
-    """
-    img_cp = tensor.clone()
-    if denorm:
-        img_cp = denormalize(img_cp).numpy()
-    else:
-        img_cp = img_cp.numpy()
-    img_cp = img_cp.transpose(1, 2, 0)  # Assuming 2D tensor color idx
-    img_cp = img_cp.clip(0, 1)
-    return img_cp
 
 def create_random_image(image_size, mean, std):
     """
