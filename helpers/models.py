@@ -159,7 +159,7 @@ def get_feature_map_sizes(model, layers, img=None):
     if img is None:
         img = h_manipulation.create_random_image((227, 227),
             h_manipulation.DatasetNormalizations.CIFAR10_MEAN.value,
-            h_manipulation.DatasetNormalizations.CIFAR10_STD.value).clone()
+            h_manipulation.DatasetNormalizations.CIFAR10_STD.value).clone().unsqueeze(0)
     else:
         img = img.unsqueeze(0)
 

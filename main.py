@@ -22,15 +22,16 @@ deep_orange = gr.themes.Color(c50="#FFEDE5",
                               c900="#330E00",
                               c950="#190700")
 
-img_block = None
-selected_layer = None
-model, model_layers, ft_map_sizes = None, None, None
-
 
 def main():
     with gr.Blocks(theme=gr.themes.Soft(primary_hue=deep_orange,
                                         secondary_hue=deep_orange,
                                         neutral_hue=gr.themes.colors.zinc)) as demo:
+        selected_layer = gr.State(None)
+        model, model_layers = gr.State(None), gr.State(None)
+        ft_map_sizes = gr.State(None)
+
+
         # GUI Elements
         with gr.Row():  # Upper banner
             gr.Markdown("""# Feature Visualization Generator\n
@@ -116,90 +117,26 @@ def main():
                                        value=None,
                                        interactive=False)
 
-        # Event listener functions
-        def on_model(evt: gr.SelectData, progress=gr.Progress()):
-            """
-            Logic flow when model is selected
-            """
-            progress(0, desc="Setting up model...")
-            global model
-            model = h_models.setup_model(h_models.ModelTypes[evt.value])
-            progress(0.25, desc="Getting layers names and details...")
-
-            # Layer agnostic logic
-            global model_layers
-            model_layers = list(get_model_layers(model, 
-                                                 getLayerRepr=True).items())
-            choices = [f"({k}): {v.split('(')[0]}" for k, v in model_layers]
-
-
-            progress(0.5, desc="Getting layer objects...")
-
-            for i in range(len(model_layers)):
-                try:
-                    layer = h_models.get_layer_by_name(model, model_layers[i][0])
-                except ValueError as e:
-                    gr.Error(e)
-
-                model_layers[i] = (model_layers[i][0], layer)
-
-            progress(0.75, desc="Getting feature maps sizes...")
-            global ft_map_sizes
-            ft_map_sizes = h_models.get_feature_map_sizes(model,
-                                                          [v for _, v in model_layers])
-            progress(1, desc="Done")
-            sleep(0.25)  # To allow for progress animation
-            return gr.update(choices=choices, value=None)
-
-        def on_layer(evt: gr.SelectData):
-            """
-            Logic flow when a layer is selected
-            """
-            global selected_layer
-            selected_layer = model_layers[evt.index]
-            match type(selected_layer[1]):
-                case nn.Conv2d:
-                    channel_num.maximum = selected_layer[1].out_channels-1
-                    nodeX_num.maximum = ft_map_sizes[evt.index][1]-1
-                    nodeY_num.maximum = ft_map_sizes[evt.index][2]-1
-                    return {layer_text:  gr.update(visible=True),
-                            channel_num: gr.update(info=f"""Values between {channel_num.minimum}-{channel_num.maximum}""", 
-                                                   visible=True, value=None),
-                            nodeX_num:   gr.update(info=f"""Values between {nodeX_num.minimum}-{nodeX_num.maximum}""", 
-                                                   visible=True, value=None),
-                            nodeY_num:   gr.update(info=f"""Values between {nodeY_num.minimum}-{nodeY_num.maximum}""", 
-                                                   visible=True, value=None),
-                            node_num:    gr.update(visible=False, value=None)}
-                case nn.Linear:
-                    node_num.maximum = selected_layer[1].out_features-1
-                    return {layer_text:  gr.update(visible=True),
-                            channel_num: gr.update(visible=False, value=None),
-                            nodeX_num:   gr.update(visible=False, value=None),
-                            nodeY_num:   gr.update(visible=False, value=None),
-                            node_num:    gr.update(info=f"""Values between {node_num.minimum}-{node_num.maximum}""", 
-                                                   visible=True, value=None)}
-                case _:
-                    gr.Warning("Unknown layer type")
-                    return {layer_text:  gr.update(visible=False),
-                            channel_num: gr.update(visible=False, value=None),
-                            nodeX_num:   gr.update(visible=False, value=None),
-                            nodeY_num:   gr.update(visible=False, value=None),
-                            node_num:    gr.update(visible=False, value=None)}
-
         # Event listener binding
         model_dd.select(lambda t: gr.Radio.update(visible=True), 
                         outputs=layer_dd)
-        model_dd.select(on_model, outputs=layer_dd)
+        model_dd.select(on_model, 
+                        inputs=[model, model_layers, ft_map_sizes], 
+                        outputs=[layer_dd, model, model_layers, ft_map_sizes])
 
         # TODO: Make button invisible always until layer selection
         layer_dd.select(lambda t: gr.Button.update(visible=True), 
                         outputs=confirm_btn)
         layer_dd.select(on_layer, 
+                        inputs=[selected_layer, 
+                                model_layers, 
+                                ft_map_sizes],
                         outputs=[layer_text,
                                  channel_num,
                                  nodeX_num,
                                  nodeY_num,
-                                 node_num])
+                                 node_num,
+                                 selected_layer])
 
         confirm_btn.click(generate,
                           inputs=[lr_sl,
@@ -212,6 +149,73 @@ def main():
                           outputs=image_block)
 
     demo.queue().launch()
+
+
+# Event listener functions
+def on_model(model, model_layers, ft_map_sizes, evt: gr.SelectData, progress=gr.Progress()):
+    """
+    Logic flow when model is selected
+    """
+    progress(0, desc="Setting up model...")
+    model = h_models.setup_model(h_models.ModelTypes[evt.value])
+    progress(0.25, desc="Getting layers names and details...")
+
+    # Layer agnostic logic
+    model_layers = list(get_model_layers(model, 
+                                            getLayerRepr=True).items())
+    choices = [f"({k}): {v.split('(')[0]}" for k, v in model_layers]
+
+
+    progress(0.5, desc="Getting layer objects...")
+
+    for i in range(len(model_layers)):
+        try:
+            layer = h_models.get_layer_by_name(model, model_layers[i][0])
+        except ValueError as e:
+            gr.Error(e)
+
+        model_layers[i] = (model_layers[i][0], layer)
+
+    progress(0.75, desc="Getting feature maps sizes...")
+    ft_map_sizes = h_models.get_feature_map_sizes(model,
+                                                    [v for _, v in model_layers])
+    progress(1, desc="Done")
+    sleep(0.25)  # To allow for progress animation
+    return gr.update(choices=choices, value=None), model, model_layers, ft_map_sizes
+
+
+def on_layer(selected_layer, model_layers, ft_map_sizes, evt: gr.SelectData):
+    """
+    Logic flow when a layer is selected
+    """
+    selected_layer = model_layers[evt.index]
+    match type(selected_layer[1]):
+        case nn.Conv2d:
+            channel_max = selected_layer[1].out_channels-1
+            nodeX_max = ft_map_sizes[evt.index][1]-1
+            nodeY_max = ft_map_sizes[evt.index][2]-1
+            return [gr.update(visible=True),
+                    gr.update(info=f"""Values between 0-{channel_max}""", maximum=channel_max, visible=True, value=None),
+                    gr.update(info=f"""Values between 0-{nodeX_max}""", maximum=nodeX_max, visible=True, value=None),
+                    gr.update(info=f"""Values between 0-{nodeY_max}""", maximum=nodeY_max, visible=True, value=None),
+                    gr.update(visible=False, value=None),
+                    selected_layer]
+        case nn.Linear:
+            node_max = selected_layer[1].out_features-1
+            return [gr.update(visible=True),
+                    gr.update(visible=False, value=None),
+                    gr.update(visible=False, value=None),
+                    gr.update(visible=False, value=None),
+                    gr.update(info=f"""Values between 0-{node_max}""", maximum=node_max, visible=True, value=None),
+                    selected_layer]
+        case _:
+            gr.Warning("Unknown layer type")
+            return [gr.update(visible=False),
+                    gr.update(visible=False, value=None),
+                    gr.update(visible=False, value=None),
+                    gr.update(visible=False, value=None),
+                    gr.update(visible=False, value=None),
+                    selected_layer]
 
 
 def generate(lr, epochs, img_size, channel, nodeX, nodeY, node, 
@@ -252,7 +256,7 @@ def generate(lr, epochs, img_size, channel, nodeX, nodeY, node,
             # Unknown
             else:
                 gr.Error("Invalid layer settings")
-                return {img_block: None}
+                return None
 
         case nn.Linear:
             if (node is not None):  # Node Specific
@@ -267,8 +271,7 @@ def generate(lr, epochs, img_size, channel, nodeX, nodeY, node,
                                 optimizer=optimizer,
                                 param_f=param_f)).squeeze(0).squeeze(0)
 
-    return {img_block: gr.Image.update(img, True)}
-
+    return gr.Image.update(img, True)
 
 
 main()
