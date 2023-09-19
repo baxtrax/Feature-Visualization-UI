@@ -27,7 +27,7 @@ def main():
     # with gr.Blocks(theme=gr.themes.Soft(primary_hue=deep_orange,
     #                                     secondary_hue=deep_orange,
     #                                     neutral_hue=gr.themes.colors.zinc)) as demo:
-    with gr.Blocks() as demo:
+    with gr.Blocks(theme=gr.themes.Soft()) as demo:
         # Session states
         selected_layer = gr.State(None)
         model, model_layers = gr.State(None), gr.State(None)
@@ -114,12 +114,12 @@ def main():
                 confirm_btn = gr.Button("Generate", visible=False)
 
             with gr.Column(): # Output
-                image_block = gr.Image(label="Output",
-                                       value=None,
-                                       interactive=False,
-                                       scale=2)
+                gr.Markdown("""## Feature Visualization Output""")
                 images_gal = gr.Gallery(columns=5,
-                                        scale=1)
+                                        scale=1,
+                                        container=True,
+                                        preview=True,
+                                        allow_preview=True)
 
         # Event listener binding
         model_dd.select(lambda t: gr.Radio.update(visible=True), 
@@ -147,8 +147,10 @@ def main():
                                   channel_num,
                                   nodeX_num,
                                   nodeY_num,
-                                  node_num],
-                          outputs=image_block)
+                                  node_num, 
+                                  selected_layer, 
+                                  model],
+                          outputs=images_gal)
 
     demo.queue().launch()
 
@@ -244,8 +246,8 @@ def on_layer(selected_layer, model_layers, ft_map_sizes, evt: gr.SelectData):
                     selected_layer]
 
 
-def generate(lr, epochs, img_size, channel, nodeX, nodeY, node, 
-             progress=gr.Progress(track_tqdm=True)):
+def generate(lr, epochs, img_size, channel, nodeX, nodeY, node, selected_layer, 
+             model, progress=gr.Progress(track_tqdm=True)):
     """
     Generates the feature visualizaiton with given parameters and tuning. 
     Utilizes the Lucent (Pytorch Lucid library).
@@ -255,8 +257,6 @@ def generate(lr, epochs, img_size, channel, nodeX, nodeY, node,
     """
     def param_f(): return param.image(img_size)  # Image setup
     def optimizer(params): return torch.optim.Adam(params, lr=lr)
-
-    global selected_layer
 
     # Specific layer type handling
     match type(selected_layer[1]):
@@ -289,15 +289,16 @@ def generate(lr, epochs, img_size, channel, nodeX, nodeY, node,
                 obj = objectives.channel(selected_layer[0], node)
             else:  # Layer Specific
                 obj = lambda m: torch.mean(torch.pow(-m(selected_layer[0]).cuda(), torch.tensor(2).cuda())).cuda()
-        
+    thresholds = (0, int(epochs*1/5), int(epochs*2/5), int(epochs*3/5), int(epochs*4/5), epochs,)
+
     img = np.array(render.render_vis(model,
                                 obj,
-                                thresholds=(epochs,),
+                                thresholds=thresholds,
                                 show_image=False,
                                 optimizer=optimizer,
-                                param_f=param_f)).squeeze(0).squeeze(0)
-
-    return gr.Image.update(img, True)
+                                param_f=param_f)).squeeze(1)
+    
+    return gr.Gallery.update(img)
 
 
 main()
