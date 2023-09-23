@@ -2,6 +2,7 @@ import torch
 import numpy as np
 import gradio as gr
 import helpers.models as h_models
+import helpers.manipulation as h_manip
 import lucent.optvis.param as param
 import lucent.optvis.objectives as objectives
 from torch import nn
@@ -97,7 +98,7 @@ def main():
                                   minimum=0.000001,
                                   maximum=3,
                                   step=0.000001,
-                                  value=0.01)
+                                  value=0.125)
 
                 epoch_num = gr.Number(label="Epochs",
                                       info="How many steps (epochs) to perform",
@@ -110,26 +111,36 @@ def main():
                                     precision=0,
                                     minimum=1,
                                     value=227)
+                
+                with gr.Accordion("Advanced Settings", open=False):
+                    gr.Markdown("""## Image Settings (WIP)""")
+                    gr.Checkbox(label="Decorrelate Image", info="Only works if channels # are unspecified")
+                    gr.Checkbox(label="FFT")
+                    gr.Number(label="Channels", info="Defaults to 3 if unspecified")
+                    gr.Number(label="Batch", info="Defaults to 1 if unspecified")
+
+                    gr.Markdown("""## Transform Settings (WIP)""")
+                    gr.Checkbox(label="Preprocess", info="Enable or disable preprocessing via transformations")
+                    gr.Dropdown(label="Applied Transforms", info="Transforms to apply", multiselect=True)
 
                 confirm_btn = gr.Button("Generate", visible=False)
 
             with gr.Column(): # Output
                 gr.Markdown("""## Feature Visualization Output""")
-                images_gal = gr.Gallery(columns=5,
-                                        scale=1,
-                                        container=True,
-                                        preview=True,
-                                        allow_preview=True)
+                with gr.Row():
+                    images_gal = gr.Gallery(elem_id="gallerybgfix",
+                                            preview=True,
+                                            allow_preview=True)
 
         # Event listener binding
-        model_dd.select(lambda t: gr.Radio.update(visible=True), 
+        model_dd.select(lambda: gr.Dropdown.update(visible=True),
                         outputs=layer_dd)
         model_dd.select(on_model, 
                         inputs=[model, model_layers, ft_map_sizes], 
                         outputs=[layer_dd, model, model_layers, ft_map_sizes])
 
         # TODO: Make button invisible always until layer selection
-        layer_dd.select(lambda t: gr.Button.update(visible=True), 
+        layer_dd.select(lambda: gr.Button.update(visible=True),
                         outputs=confirm_btn)
         layer_dd.select(on_layer, 
                         inputs=[selected_layer, model_layers, ft_map_sizes],
@@ -186,11 +197,10 @@ def on_model(model, model_layers, ft_map_sizes, evt: gr.SelectData, progress=gr.
         model_layers[i] = (model_layers[i][0], layer)
 
     progress(0.75, desc="Getting feature maps sizes...")
-    ft_map_sizes = h_models.get_feature_map_sizes(model,
-                                                    [v for _, v in model_layers])
+    ft_map_sizes = h_models.get_feature_map_sizes(model, [v for _, v in model_layers])
     progress(1, desc="Done")
     sleep(0.25)  # To allow for progress animation, not good practice
-    return [gr.update(choices=choices, value=None),
+    return [gr.update(choices=choices, value=''),
             model, model_layers, ft_map_sizes]
 
 
@@ -289,8 +299,8 @@ def generate(lr, epochs, img_size, channel, nodeX, nodeY, node, selected_layer,
                 obj = objectives.channel(selected_layer[0], node)
             else:  # Layer Specific
                 obj = lambda m: torch.mean(torch.pow(-m(selected_layer[0]).cuda(), torch.tensor(2).cuda())).cuda()
-    thresholds = (0, int(epochs*1/5), int(epochs*2/5), int(epochs*3/5), int(epochs*4/5), epochs,)
-
+    # thresholds = (1, int(epochs*1/5), int(epochs*2/5), int(epochs*3/5), int(epochs*4/5), epochs,)
+    thresholds = h_manip.expo_tuple(epochs, 6)
     img = np.array(render.render_vis(model,
                                 obj,
                                 thresholds=thresholds,

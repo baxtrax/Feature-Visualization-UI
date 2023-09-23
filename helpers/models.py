@@ -1,28 +1,24 @@
-# Holds methods and enums used for model interaction and logic
-# Author: Bradley Gathers
-
 import os
 import torch
+from torch import nn, load, hub
+from torchvision import models
 import helpers.manipulation as h_manipulation
 from enum import Enum
-from torchvision import models
-from torch import nn, load, hub
 
 
 class ModelTypes(Enum):
-    """
-    The valid model types that can be used. Simplifies selection of models.
-    
-    Valid values: RESNET, ALEXNET, DENSENET, EFFICIENTNET, GOOGLENET, 
-    MOBILENET, SQUEEZENET.
-    """
-    RESNET       = 0
-    ALEXNET      = 1
-    DENSENET     = 2
+    RESNET = 0
+    ALEXNET = 1
+    DENSENET = 2
     EFFICIENTNET = 3
-    GOOGLENET    = 4
-    MOBILENET    = 5
-    SQUEEZENET   = 6
+    GOOGLENET = 4
+    MOBILENET = 5
+    SQUEEZENET = 6
+
+
+class LayerTypes(Enum):
+    CONVOLUTIONAL = nn.Conv2d
+    LINEAR = nn.Linear
 
 
 _hook_activations = None
@@ -155,11 +151,10 @@ def get_feature_map_sizes(model, layers, img=None):
     :return: Feature map sizes
     """
     feature_map_sizes = [None] * len(layers)
-
     if img is None:
         img = h_manipulation.create_random_image((227, 227),
-            h_manipulation.DatasetNormalizations.CIFAR10_MEAN.value,
-            h_manipulation.DatasetNormalizations.CIFAR10_STD.value).clone().unsqueeze(0)
+              h_manipulation.DatasetNormalizations.CIFAR10_MEAN.value,
+              h_manipulation.DatasetNormalizations.CIFAR10_STD.value).clone().unsqueeze(0)
     else:
         img = img.unsqueeze(0)
 

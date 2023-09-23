@@ -28,3 +28,13 @@ def create_random_image(image_size, mean, std):
     for i in range(len(mean)):  # Create each channel with the specified custom distribution
         channels.append(torch.empty((image_size[0], image_size[1])).normal_(mean=mean[i], std=std[i]))
     return torch.stack(channels)
+
+def expo_tuple(epochs, num_values):
+    if num_values < 2:
+        raise ValueError("Number of values must be greater than or equal to 2")
+    
+    exponential_values = [
+        1,
+        * [int(1 + (epochs - 1) * (i / (num_values - 2)) ** 2) for i in range(1, num_values - 1)]
+    ]
+    return tuple(exponential_values) # Convert to tuple
