@@ -22,17 +22,20 @@ deep_orange = gr.themes.Color(c50="#FFEDE5",
                               c800="#661D00",
                               c900="#330E00",
                               c950="#190700")
-
+css = """
+div[data-testid="block-label"] {z-index: var(--layer-3)}
+"""
 
 def main():
     # with gr.Blocks(theme=gr.themes.Soft(primary_hue=deep_orange,
     #                                     secondary_hue=deep_orange,
     #                                     neutral_hue=gr.themes.colors.zinc)) as demo:
-    with gr.Blocks(theme=gr.themes.Soft()) as demo:
+    with gr.Blocks(css=css, theme=gr.themes.Soft()) as demo:
         # Session states
         selected_layer = gr.State(None)
         model, model_layers = gr.State(None), gr.State(None)
         ft_map_sizes = gr.State(None)
+        thresholds = gr.State(None)
 
         # GUI Elements
         with gr.Row():  # Upper banner
@@ -128,7 +131,7 @@ def main():
             with gr.Column(): # Output
                 gr.Markdown("""## Feature Visualization Output""")
                 with gr.Row():
-                    images_gal = gr.Gallery(elem_id="gallerybgfix",
+                    images_gal = gr.Gallery(show_label=False,
                                             preview=True,
                                             allow_preview=True)
 
@@ -160,7 +163,11 @@ def main():
                                   nodeY_num,
                                   node_num, 
                                   selected_layer, 
-                                  model],
+                                  model, 
+                                  thresholds],
+                          outputs=[images_gal, thresholds])
+        images_gal.select(update_img_label,
+                          inputs=thresholds,
                           outputs=images_gal)
 
     demo.queue().launch()
@@ -257,7 +264,7 @@ def on_layer(selected_layer, model_layers, ft_map_sizes, evt: gr.SelectData):
 
 
 def generate(lr, epochs, img_size, channel, nodeX, nodeY, node, selected_layer, 
-             model, progress=gr.Progress(track_tqdm=True)):
+             model, thresholds, progress=gr.Progress(track_tqdm=True)):
     """
     Generates the feature visualizaiton with given parameters and tuning. 
     Utilizes the Lucent (Pytorch Lucid library).
@@ -299,7 +306,6 @@ def generate(lr, epochs, img_size, channel, nodeX, nodeY, node, selected_layer,
                 obj = objectives.channel(selected_layer[0], node)
             else:  # Layer Specific
                 obj = lambda m: torch.mean(torch.pow(-m(selected_layer[0]).cuda(), torch.tensor(2).cuda())).cuda()
-    # thresholds = (1, int(epochs*1/5), int(epochs*2/5), int(epochs*3/5), int(epochs*4/5), epochs,)
     thresholds = h_manip.expo_tuple(epochs, 6)
     img = np.array(render.render_vis(model,
                                 obj,
@@ -308,7 +314,10 @@ def generate(lr, epochs, img_size, channel, nodeX, nodeY, node, selected_layer,
                                 optimizer=optimizer,
                                 param_f=param_f)).squeeze(1)
     
-    return gr.Gallery.update(img)
+    return gr.Gallery.update(img), thresholds
 
+
+def update_img_label(thresholds, evt: gr.SelectData):
+    return gr.Gallery.update(label=thresholds[evt.index], show_label=True)
 
 main()
