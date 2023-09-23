@@ -318,6 +318,6 @@ def generate(lr, epochs, img_size, channel, nodeX, nodeY, node, selected_layer,
 
 
 def update_img_label(thresholds, evt: gr.SelectData):
-    return gr.Gallery.update(label=thresholds[evt.index], show_label=True)
+    return gr.Gallery.update(label='Epoch ' + str(thresholds[evt.index]), show_label=True)
 
 main()
