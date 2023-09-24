@@ -10,41 +10,32 @@ from time import sleep
 from lucent.optvis import render
 from lucent.modelzoo.util import get_model_layers
 
-
-# deep_orange = gr.themes.Color(c50="#FFEDE5",
-#                               c100="#FFDACC",
-#                               c200="#FFB699",
-#                               c300="#FF9166",
-#                               c400="#FF6D33",
-#                               c500="#FF4700",
-#                               c600="#CC3A00",
-#                               c700="#992B00",
-#                               c800="#661D00",
-#                               c900="#330E00",
-#                               c950="#190700")
-css = """
-div[data-testid="block-label"] {z-index: var(--layer-3)}
-"""
+# Custom css
+css = """div[data-testid="block-label"] {z-index: var(--layer-3)}"""
 
 def main():
-    # with gr.Blocks(theme=gr.themes.Soft(primary_hue=deep_orange,
-    #                                     secondary_hue=deep_orange,
-    #                                     neutral_hue=gr.themes.colors.zinc)) as demo:
-    with gr.Blocks(title="Feature Visualization Generator", css=css, theme=gr.themes.Soft()) as demo:
-        # Session states
-        selected_layer = gr.State(None)
-        model, model_layers = gr.State(None), gr.State(None)
-        ft_map_sizes = gr.State(None)
-        thresholds = gr.State(None)
-        channel_max = gr.State(None)
-        nodeX_max = gr.State(None)
-        nodeY_max = gr.State(None)
-        node_max = gr.State(None)
+    with gr.Blocks(title="Feature Visualization Generator", 
+                   css=css, 
+                   theme=gr.themes.Soft(primary_hue="blue",
+                                        secondary_hue="blue",
+                                        )) as demo:
+        
+        # Session state init
+        model, model_layers, selected_layer, ft_map_sizes, \
+        thresholds, channel_max, nodeX_max, nodeY_max, \
+        node_max = (gr.State(None) for _ in range(9))
 
         # GUI Elements
         with gr.Row():  # Upper banner
             gr.Markdown("""# Feature Visualization Generator\n
-                             Start by selecting a model from the drop down.""")
+                             Feature Visualizations (FV's) answer questions 
+                             about what a network—or parts of a network—are 
+                             looking for by generating examples. 
+                             ([Read more about it here](https://distill.pub/2017/feature-visualization/))
+                             This generator aims to make it easier to explore 
+                             different concepts used in FV generation and allow 
+                             for experimentation.\n\n
+                             **Start by selecting a model from the drop down.**""")
         with gr.Row():  # Lower inputs and outputs
             with gr.Column():  # Inputs
                 gr.Markdown("""## Model Settings""")
@@ -108,29 +99,102 @@ def main():
                                       precision=0,
                                       minimum=1,
                                       value=200)
-
-                img_num = gr.Number(label="Image Size",
-                                    info="Image is square (<value> by <value>)",
-                                    precision=0,
-                                    minimum=1,
-                                    value=227)
                 
                 with gr.Accordion("Advanced Settings", open=False):
-                    gr.Markdown("""## Image Settings (WIP)""")
-                    chan_decor_ck = gr.Checkbox(label="Channel Decorrelation", 
-                                                info="Only works if 3 channels",
-                                                value=True)
-                    spacial_decor_ck = gr.Checkbox(label="Spacial Decorrelation (FFT)",
-                                                   value=True)
-                    batch_num = gr.Number(label="Batch",
-                                          value=1,
-                                          precision=0)
-                    sd_num = gr.Number(label="Standard Deviation",
-                                       value=0.01)
+                    with gr.Column(variant="panel"):
+                        gr.Markdown("""## Image Settings""")
+                        img_num = gr.Number(label="Image Size",
+                                            info="Image is square (<value> by <value>)",
+                                            precision=0,
+                                            minimum=1,
+                                            value=227)
+                        chan_decor_ck = gr.Checkbox(label="Channel Decorrelation", 
+                                                    info="Reduces channel-to-channel correlations",
+                                                    value=True)
+                        spacial_decor_ck = gr.Checkbox(label="Spacial Decorrelation (FFT)",
+                                                       info="Reduces pixel-to-pixel correlations",
+                                                       value=True)
+                        sd_num = gr.Number(label="Standard Deviation",
+                                           info="The STD of the randomly generated starter image",
+                                           value=0.01)
 
-                    gr.Markdown("""## Transform Settings (WIP)""")
-                    gr.Checkbox(label="Preprocess", info="Enable or disable preprocessing via transformations")
-                    gr.Dropdown(label="Applied Transforms", info="Transforms to apply", multiselect=True)
+                    with gr.Column(variant="panel"):
+                        gr.Markdown("""## Transform Settings (WIP)""")
+                        preprocess_ck = gr.Checkbox(label="Preprocess",
+                                                    info="Enable or disable preprocessing via transformations",
+                                                    value=True,
+                                                    interactive=True)
+                        transform_choices = [t.value for t in h_models.TransformTypes]
+                        transforms_dd = gr.Dropdown(label="Applied Transforms", 
+                                                    info="Transforms to apply",
+                                                    choices=transform_choices,
+                                                    multiselect=True,
+                                                    value=transform_choices,
+                                                    interactive=True)
+                        
+                        # Transform specific settings
+                        pad_col = gr.Column()
+                        with pad_col:
+                            gr.Markdown("""### Pad Settings""")
+                            with gr.Row():
+                                pad_num = gr.Number(label="Padding",
+                                                    info="How many pixels of padding",
+                                                    minimum=0,
+                                                    value=12,
+                                                    precision=0,
+                                                    interactive=True)
+                                mode_rad = gr.Radio(label="Mode",
+                                                    info="Constant fills padded pixels with a value. Reflect fills with edge pixels",
+                                                    choices=["Constant", "Reflect"],
+                                                    value="Constant",
+                                                    interactive=True)
+                                constant_num = gr.Number(label="Constant Fill Value",
+                                                         info="Value to fill padded pixels",
+                                                         value=0.5,
+                                                         interactive=True)
+
+                        jitter_col = gr.Column()
+                        with jitter_col:
+                            gr.Markdown("""### Jitter Settings""")
+                            with gr.Row():
+                                jitter_num = gr.Number(label="Jitter",
+                                                       info="How much to jitter image by",
+                                                       minimum=1,
+                                                       value=8,
+                                                       interactive=True)
+
+                        rand_scale_col = gr.Column()
+                        with rand_scale_col:
+                            gr.Markdown("""### Random Scale Settings""")
+                            with gr.Row():
+                                scale_num = gr.Number(label="Max scale",
+                                                      info="How much to scale in both directions (+ and -)",
+                                                      minimum=0,
+                                                      value=10,
+                                                      interactive=True)
+                        
+                        rand_rotate_col = gr.Column()
+                        with rand_rotate_col:
+                            gr.Markdown("""### Random Rotate Settings""")
+                            with gr.Row():
+                                rotate_num = gr.Number(label="Max angle",
+                                                       info="How much to rotate in both directions (+ and -)",
+                                                       minimum=0,
+                                                       value=10,
+                                                       interactive=True)
+                        
+                        ad_jitter_col = gr.Column()
+                        with ad_jitter_col:
+                            gr.Markdown("""### Additional Jitter Settings""")
+                            with gr.Row():
+                                ad_jitter_num = gr.Number(label="Jitter",
+                                                          info="How much to jitter image by",
+                                                          minimum=1,
+                                                          value=4,
+                                                          interactive=True)
+ 
+
+
 
                 confirm_btn = gr.Button("Generate", visible=False)
 
@@ -169,6 +233,35 @@ def main():
         nodeY_num.blur(check_input, inputs=[nodeY_num, nodeY_max])
         node_num.blur(check_input, inputs=[node_num, node_max])
 
+        images_gal.select(update_img_label,
+                    inputs=thresholds,
+                    outputs=images_gal)
+        
+        preprocess_ck.select(lambda status: (gr.update(visible=status), 
+                                             gr.update(visible=status), 
+                                             gr.update(visible=status), 
+                                             gr.update(visible=status), 
+                                             gr.update(visible=status), 
+                                             gr.update(visible=status)),
+                             inputs=preprocess_ck,
+                             outputs=[transforms_dd,
+                                      pad_col,
+                                      jitter_col,
+                                      rand_scale_col,
+                                      rand_rotate_col,
+                                      ad_jitter_col])
+        
+        transforms_dd.change(on_transform,
+                             inputs=transforms_dd,
+                             outputs=[pad_col,
+                                      jitter_col,
+                                      rand_scale_col,
+                                      rand_rotate_col,
+                                      ad_jitter_col])
+        
+        mode_rad.select(on_pad_mode,
+                        outputs=constant_num)
+
         confirm_btn.click(generate,
                           inputs=[lr_sl,
                                   epoch_num,
@@ -182,12 +275,9 @@ def main():
                                   thresholds,
                                   chan_decor_ck,
                                   spacial_decor_ck,
-                                  batch_num,
                                   sd_num],
                           outputs=[images_gal, thresholds])
-        images_gal.select(update_img_label,
-                          inputs=thresholds,
-                          outputs=images_gal)
+        
     demo.queue().launch()
 
 
@@ -295,7 +385,7 @@ def on_layer(selected_layer, model_layers, ft_map_sizes, evt: gr.SelectData):
 
 
 def generate(lr, epochs, img_size, channel, nodeX, nodeY, node, selected_layer, 
-             model, thresholds, chan_decor, spacial_decor, batch_num, 
+             model, thresholds, chan_decor, spacial_decor, 
              sd_num, progress=gr.Progress(track_tqdm=True)):
     """
     Generates the feature visualizaiton with given parameters and tuning. 
@@ -308,7 +398,6 @@ def generate(lr, epochs, img_size, channel, nodeX, nodeY, node, selected_layer,
     def param_f(): return param.image(img_size, 
                                       fft=spacial_decor, 
                                       decorrelate=chan_decor,
-                                      batch=batch_num,
                                       sd=sd_num)  # Image setup
     def optimizer(params): return torch.optim.Adam(params, lr=lr)
 
@@ -344,12 +433,16 @@ def generate(lr, epochs, img_size, channel, nodeX, nodeY, node, selected_layer,
             else:  # Layer Specific
                 obj = lambda m: torch.mean(torch.pow(-m(selected_layer[0]).cuda(), torch.tensor(2).cuda())).cuda()
     thresholds = h_manip.expo_tuple(epochs, 6)
+    print(thresholds)
+
+
     img = np.array(render.render_vis(model,
-                                obj,
-                                thresholds=thresholds,
-                                show_image=False,
-                                optimizer=optimizer,
-                                param_f=param_f)).squeeze(1)
+                                     obj,
+                                     thresholds=thresholds,
+                                     show_image=False,
+                                     optimizer=optimizer,
+                                     param_f=param_f,
+                                     verbose=True)).squeeze(1)
     
     return gr.Gallery.update(img), thresholds
 
@@ -357,9 +450,28 @@ def generate(lr, epochs, img_size, channel, nodeX, nodeY, node, selected_layer,
 def update_img_label(thresholds, evt: gr.SelectData):
     return gr.Gallery.update(label='Epoch ' + str(thresholds[evt.index]), show_label=True)
 
+
 def check_input(curr, maxx):
     if curr > maxx:
         raise gr.Error(f"""Value {curr} is higher then maximum of {maxx}""")
 
 
+def on_transform(transforms):
+    transform_states = {
+        h_models.TransformTypes.PAD.value: False,
+        h_models.TransformTypes.JITTER.value: False,
+        h_models.TransformTypes.RANDOM_SCALE.value: False,
+        h_models.TransformTypes.RANDOM_ROTATE.value: False,
+        h_models.TransformTypes.AD_JITTER.value: False
+    }
+    for transform in transforms:
+        transform_states[transform] = True
+
+    return [gr.update(visible=state) for state in transform_states.values()]
+
+
+def on_pad_mode (evt: gr.SelectData):
+    if (evt.value == "Constant"):
+        return gr.update(visible=True)
+    return gr.update(visible=False)
 main()

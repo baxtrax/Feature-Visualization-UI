@@ -20,6 +20,14 @@ class LayerTypes(Enum):
     CONVOLUTIONAL = nn.Conv2d
     LINEAR = nn.Linear
 
+class TransformTypes(Enum):
+    PAD = "Pad"
+    JITTER = "Jitter"
+    RANDOM_SCALE = "Random Scale"
+    RANDOM_ROTATE = "Random Rotate"
+    AD_JITTER = "Additional Jitter"
+
+
 
 _hook_activations = None
 
@@ -152,6 +160,7 @@ def get_feature_map_sizes(model, layers, img=None):
     """
     feature_map_sizes = [None] * len(layers)
     if img is None:
+        # TODO Remove this and just generates a blank image of 227 by 227
         img = h_manipulation.create_random_image((227, 227),
               h_manipulation.DatasetNormalizations.CIFAR10_MEAN.value,
               h_manipulation.DatasetNormalizations.CIFAR10_STD.value).clone().unsqueeze(0)
