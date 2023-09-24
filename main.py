@@ -11,17 +11,17 @@ from lucent.optvis import render
 from lucent.modelzoo.util import get_model_layers
 
 
-deep_orange = gr.themes.Color(c50="#FFEDE5",
-                              c100="#FFDACC",
-                              c200="#FFB699",
-                              c300="#FF9166",
-                              c400="#FF6D33",
-                              c500="#FF4700",
-                              c600="#CC3A00",
-                              c700="#992B00",
-                              c800="#661D00",
-                              c900="#330E00",
-                              c950="#190700")
+# deep_orange = gr.themes.Color(c50="#FFEDE5",
+#                               c100="#FFDACC",
+#                               c200="#FFB699",
+#                               c300="#FF9166",
+#                               c400="#FF6D33",
+#                               c500="#FF4700",
+#                               c600="#CC3A00",
+#                               c700="#992B00",
+#                               c800="#661D00",
+#                               c900="#330E00",
+#                               c950="#190700")
 css = """
 div[data-testid="block-label"] {z-index: var(--layer-3)}
 """
@@ -30,12 +30,16 @@ def main():
     # with gr.Blocks(theme=gr.themes.Soft(primary_hue=deep_orange,
     #                                     secondary_hue=deep_orange,
     #                                     neutral_hue=gr.themes.colors.zinc)) as demo:
-    with gr.Blocks(css=css, theme=gr.themes.Soft()) as demo:
+    with gr.Blocks(title="Feature Visualization Generator", css=css, theme=gr.themes.Soft()) as demo:
         # Session states
         selected_layer = gr.State(None)
         model, model_layers = gr.State(None), gr.State(None)
         ft_map_sizes = gr.State(None)
         thresholds = gr.State(None)
+        channel_max = gr.State(None)
+        nodeX_max = gr.State(None)
+        nodeY_max = gr.State(None)
+        node_max = gr.State(None)
 
         # GUI Elements
         with gr.Row():  # Upper banner
@@ -62,7 +66,6 @@ def main():
                                             info="Please choose a layer",
                                             precision=0,
                                             minimum=0,
-                                            maximum=100,
                                             interactive=True,
                                             visible=False,
                                             value=None)
@@ -71,7 +74,6 @@ def main():
                                          info="Please choose a layer",
                                          precision=0,
                                          minimum=0,
-                                         maximum=10,
                                          interactive=True,
                                          visible=False,
                                          value=None)
@@ -80,7 +82,6 @@ def main():
                                           info="Please choose a layer",
                                           precision=0,
                                           minimum=0,
-                                          maximum=64,
                                           interactive=True,
                                           visible=False,
                                           value=None)
@@ -89,7 +90,6 @@ def main():
                                           info="Please choose a layer",
                                           precision=0,
                                           minimum=0,
-                                          maximum=64,
                                           interactive=True,
                                           visible=False,
                                           value=None)
@@ -117,10 +117,16 @@ def main():
                 
                 with gr.Accordion("Advanced Settings", open=False):
                     gr.Markdown("""## Image Settings (WIP)""")
-                    gr.Checkbox(label="Decorrelate Image", info="Only works if channels # are unspecified")
-                    gr.Checkbox(label="FFT")
-                    gr.Number(label="Channels", info="Defaults to 3 if unspecified")
-                    gr.Number(label="Batch", info="Defaults to 1 if unspecified")
+                    chan_decor_ck = gr.Checkbox(label="Channel Decorrelation", 
+                                                info="Only works if 3 channels",
+                                                value=True)
+                    spacial_decor_ck = gr.Checkbox(label="Spacial Decorrelation (FFT)",
+                                                   value=True)
+                    batch_num = gr.Number(label="Batch",
+                                          value=1,
+                                          precision=0)
+                    sd_num = gr.Number(label="Standard Deviation",
+                                       value=0.01)
 
                     gr.Markdown("""## Transform Settings (WIP)""")
                     gr.Checkbox(label="Preprocess", info="Enable or disable preprocessing via transformations")
@@ -152,7 +158,16 @@ def main():
                                  nodeX_num,
                                  nodeY_num,
                                  node_num,
-                                 selected_layer])
+                                 selected_layer,
+                                 channel_max,
+                                 nodeX_max,
+                                 nodeY_max,
+                                 node_max])
+        
+        channel_num.blur(check_input, inputs=[channel_num, channel_max])
+        nodeX_num.blur(check_input, inputs=[nodeX_num, nodeX_max])
+        nodeY_num.blur(check_input, inputs=[nodeY_num, nodeY_max])
+        node_num.blur(check_input, inputs=[node_num, node_max])
 
         confirm_btn.click(generate,
                           inputs=[lr_sl,
@@ -164,12 +179,15 @@ def main():
                                   node_num, 
                                   selected_layer, 
                                   model, 
-                                  thresholds],
+                                  thresholds,
+                                  chan_decor_ck,
+                                  spacial_decor_ck,
+                                  batch_num,
+                                  sd_num],
                           outputs=[images_gal, thresholds])
         images_gal.select(update_img_label,
                           inputs=thresholds,
                           outputs=images_gal)
-
     demo.queue().launch()
 
 
@@ -187,6 +205,8 @@ def on_model(model, model_layers, ft_map_sizes, evt: gr.SelectData, progress=gr.
     """
     progress(0, desc="Setting up model...")
     model = h_models.setup_model(h_models.ModelTypes[evt.value])
+    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+    model.to(device).eval()
 
     progress(0.25, desc="Getting layers names and details...")
     model_layers = list(get_model_layers(model, 
@@ -225,34 +245,41 @@ def on_layer(selected_layer, model_layers, ft_map_sizes, evt: gr.SelectData):
              Node Y Number Component,
              Selected layer state/variable]
     """
+    channel_max, nodeX_max, nodeY_max, node_max = -1, -1, -1, -1
     selected_layer = model_layers[evt.index]
     match type(selected_layer[1]):
         case nn.Conv2d:
             channel_max = selected_layer[1].out_channels-1
             nodeX_max = ft_map_sizes[evt.index][1]-1
             nodeY_max = ft_map_sizes[evt.index][2]-1
+            
             return [gr.update(visible=True),
-                    gr.update(info=f"""Values between 0-{channel_max}""", 
-                              maximum=channel_max, 
+                    gr.Number.update(info=f"""Values between 0-{channel_max}""", 
                               visible=True, value=None),
-                    gr.update(info=f"""Values between 0-{nodeX_max}""", 
-                              maximum=nodeX_max, 
+                    gr.Number.update(info=f"""Values between 0-{nodeX_max}""", 
                               visible=True, value=None),
-                    gr.update(info=f"""Values between 0-{nodeY_max}""", 
-                              maximum=nodeY_max, 
+                    gr.Number.update(info=f"""Values between 0-{nodeY_max}""", 
                               visible=True, value=None),
                     gr.update(visible=False, value=None),
-                    selected_layer]
+                    selected_layer,
+                    channel_max,
+                    nodeX_max,
+                    nodeY_max,
+                    node_max]
         case nn.Linear:
             node_max = selected_layer[1].out_features-1
             return [gr.update(visible=True),
-                    gr.update(visible=False, value=None),
-                    gr.update(visible=False, value=None),
-                    gr.update(visible=False, value=None),
+                    gr.Number.update(visible=False, value=None),
+                    gr.Number.update(visible=False, value=None),
+                    gr.Number.update(visible=False, value=None),
                     gr.update(info=f"""Values between 0-{node_max}""", 
                               maximum=node_max, 
                               visible=True, value=None),
-                    selected_layer]
+                    selected_layer,
+                    channel_max,
+                    nodeX_max,
+                    nodeY_max,
+                    node_max]
         case _:
             gr.Warning("Unknown layer type")
             return [gr.update(visible=False),
@@ -260,11 +287,16 @@ def on_layer(selected_layer, model_layers, ft_map_sizes, evt: gr.SelectData):
                     gr.update(visible=False, value=None),
                     gr.update(visible=False, value=None),
                     gr.update(visible=False, value=None),
-                    selected_layer]
+                    selected_layer,
+                    channel_max,
+                    nodeX_max,
+                    nodeY_max,
+                    node_max]
 
 
 def generate(lr, epochs, img_size, channel, nodeX, nodeY, node, selected_layer, 
-             model, thresholds, progress=gr.Progress(track_tqdm=True)):
+             model, thresholds, chan_decor, spacial_decor, batch_num, 
+             sd_num, progress=gr.Progress(track_tqdm=True)):
     """
     Generates the feature visualizaiton with given parameters and tuning. 
     Utilizes the Lucent (Pytorch Lucid library).
@@ -272,7 +304,12 @@ def generate(lr, epochs, img_size, channel, nodeX, nodeY, node, selected_layer,
     Inputs are different gradio components. Outputs an image component. Method 
     tracks its own tqdm progress.
     """
-    def param_f(): return param.image(img_size)  # Image setup
+
+    def param_f(): return param.image(img_size, 
+                                      fft=spacial_decor, 
+                                      decorrelate=chan_decor,
+                                      batch=batch_num,
+                                      sd=sd_num)  # Image setup
     def optimizer(params): return torch.optim.Adam(params, lr=lr)
 
     # Specific layer type handling
@@ -319,5 +356,10 @@ def generate(lr, epochs, img_size, channel, nodeX, nodeY, node, selected_layer,
 
 def update_img_label(thresholds, evt: gr.SelectData):
     return gr.Gallery.update(label='Epoch ' + str(thresholds[evt.index]), show_label=True)
+
+def check_input(curr, maxx):
+    if curr > maxx:
+        raise gr.Error(f"""Value {curr} is higher then maximum of {maxx}""")
+
 
 main()
