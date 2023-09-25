@@ -1,3 +1,13 @@
+---
+title: Demo Space
+emoji: 🎨
+colorFrom: gray
+colorTo: blue
+sdk: gradio
+app_file: main.py
+pinned: true
+---
+
 # Feature Visualization Generator UI
 
 [![Python][Python-badge]][Python-url]
