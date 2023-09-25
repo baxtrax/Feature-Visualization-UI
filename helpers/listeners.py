@@ -182,8 +182,12 @@ def generate(lr, epochs, img_size, channel, nodeX, nodeY, node, layer_sel,
 
             elif (channel is None and nodeX is None and nodeY is None):
                 gr.Info("Convolutional Layer Specific")
-                obj = lambda m: torch.mean(torch.pow(-m(layer_sel[0]).cuda(), 
-                                                     torch.tensor(2).cuda())).cuda()
+                if torch.cuda.is_available():
+                    obj = lambda m: torch.mean(torch.pow(-m(layer_sel[0]).cuda(), 
+                                                         torch.tensor(2).cuda())).cuda()
+                else:
+                    obj = lambda m: torch.mean(torch.pow(-m(layer_sel[0]), 
+                                                         torch.tensor(2)))
             
             # Unknown
             else:
@@ -196,11 +200,21 @@ def generate(lr, epochs, img_size, channel, nodeX, nodeY, node, layer_sel,
                 obj = objs.channel(layer_sel[0], node)
             else:
                 gr.Info("Linear Layer Specific")
-                obj = lambda m: torch.mean(torch.pow(-m(layer_sel[0]).cuda(), torch.tensor(2).cuda())).cuda()
+                if torch.cuda.is_available():
+                    obj = lambda m: torch.mean(torch.pow(-m(layer_sel[0]).cuda(), 
+                                                         torch.tensor(2).cuda())).cuda()
+                else:
+                    obj = lambda m: torch.mean(torch.pow(-m(layer_sel[0]), 
+                                                         torch.tensor(2)))
         case _:
             gr.Info("Attempting unknown Layer Specific")
             transforms = [] # Just in case
-            obj = lambda m: torch.mean(torch.pow(-m(layer_sel[0]).cuda(), torch.tensor(2).cuda())).cuda()
+            if torch.cuda.is_available():
+                obj = lambda m: torch.mean(torch.pow(-m(layer_sel[0]).cuda(), 
+                                                        torch.tensor(2).cuda())).cuda()
+            else:
+                obj = lambda m: torch.mean(torch.pow(-m(layer_sel[0]), 
+                                                        torch.tensor(2)))
 
     thresholds = h_manip.expo_tuple(epochs, 6)
 
