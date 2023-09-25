@@ -1,12 +1,13 @@
 # Feature Visualization Generator UI
 
-[![HTML][Html-badge]][Html-url]
-[![CSS][CSS-badge]][CSS-url]
-[![JS][JS-badge]][JS-url]
+[![Python][Python-badge]][Python-url]
+[![Pytorch][Pytorch-badge]][Pytorch-url]
 
-Easy to use website that dynamically gives a view of a model. Additonally can show the feature visualizations of a network when hovering over layers that have feature visualizations generated.
+A Feature Visualization (FV) generator UI. Utilizes the Gradio web framework in conjunction with the [Lucent](https://github.com/greentfrapp/lucent) (Pytorch [Lucid](https://github.com/tensorflow/lucid) framework. Aimed to help others through experiential learning, allowing them to explore different input parameters and settings and quickly see their effects.
 
-The website will default to a [Resnet18 (Kaiming He et al.)](https://arxiv.org/abs/1512.03385) network that has been modified to work with the [CIFAR10 (Alex Krizhevsky)](https://www.cs.toronto.edu/~kriz/learning-features-2009-TR.pdf) dataset. **Additionally all layers that are `Conv2d` layers will show a feature visualization on hover.**
+Concepts that are used in the FV generation process such as [Channel Decorrelation and Spatial Decorelation](https://distill.pub/2017/feature-visualization/#d-footnote-8:~:text=the%20training%20data.-,Preconditioning%20and%20Parameterization,-In%20the%20previous) are discussed in the Google Brain Feature Visualization article ([Olah, et al.](https://distill.pub/2017/feature-visualization/))
+
+Tested layers are Conv2D (Convolutional Layer) and Linear layers. Feel free to experiment, I can not guarantee that they will optimize correctly.
 
 <!-- TABLE OF CONTENTS -->
 <details>
@@ -31,7 +32,7 @@ The website will default to a [Resnet18 (Kaiming He et al.)](https://arxiv.org/a
   </ol>
 </details>
 
-### Try it out here! --> https://baxtrax.github.io/Model-Visualizer/
+### Try it out here! --> --Insert huggingface space here--
 
 ![image](https://github.com/baxtrax/Model-Visualizer/assets/34373485/5c358087-00bb-4bb6-a699-123999ceb367)
 
@@ -99,8 +100,11 @@ I personally used the VScode extension `Live Server` for local development.
 
 
 <!-- MARKDOWN LINKS & IMAGES -->
-[HTML-badge]: https://img.shields.io/badge/HTML-E34F26.svg?style=for-the-badge&logo=html5&logoColor=white
-[HTML-url]: https://developer.mozilla.org/en-US/docs/Web/HTML
+<!-- https://www.markdownguide.org/basic-syntax/#reference-style-links -->
+[Python-badge]: https://img.shields.io/badge/Python-3776AB.svg?style=for-the-badge&logo=python&logoColor=FFD343
+[Python-url]: https://www.python.org/
+[Pytorch-badge]: https://img.shields.io/badge/Pytorch-EE4C2C.svg?style=for-the-badge&logo=pytorch&logoColor=white
+[Pytorch-url]: https://pytorch.org/
 
 
 version https://git-lfs.github.com/spec/v1
