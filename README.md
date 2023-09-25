@@ -43,7 +43,8 @@ Tested layers are Conv2D (Convolutional Layer) and Linear layers. Feel free to e
   </ol>
 </details>
 
-### Try it out here! --> --Insert huggingface space here--
+### Try it out here! --> https://baxtrax-feature-visualization-generator-ui.hf.space
+
 
 ![image](https://github.com/baxtrax/Model-Visualizer/assets/34373485/5c358087-00bb-4bb6-a699-123999ceb367)
 
