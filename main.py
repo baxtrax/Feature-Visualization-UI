@@ -23,7 +23,7 @@ def main():
                              Feature Visualizations (FV's) answer questions 
                              about what a network—or parts of a network—are 
                              looking for by generating examples. 
-                             ([Read more about it here](https://distill.pub/2017/feature-visualization/)
+                             ([Read more about it here](https://distill.pub/2017/feature-visualization/))
                              FVs are a part of a wider field called Explainable 
                              Artificial Intelligence (XAI) This generator aims 
                              to make it easier to explore different concepts 
