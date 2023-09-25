@@ -64,6 +64,7 @@ def setup_model(model):
     :return: model
     """
     curr_dir = os.path.dirname(__file__) + "/../"
+    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     match model:
         case ModelTypes.RESNET:
             base = models.resnet18(
@@ -71,14 +72,14 @@ def setup_model(model):
             base.fc = nn.Linear(base.fc.in_features, 10)
 
             base.load_state_dict(
-                load(curr_dir + "models/resnet_standard_cifar10.pt"))
+                load(curr_dir + "models/resnet_standard_cifar10.pt", map_location=device))
             model = base
         case ModelTypes.ALEXNET:
             base = models.alexnet(weights=models.AlexNet_Weights.IMAGENET1K_V1)
             base.classifier[6] = nn.Linear(base.classifier[6].in_features, 10)
 
             base.load_state_dict(
-                load(curr_dir + "models/alexnet_standard_cifar10.pt"))
+                load(curr_dir + "models/alexnet_standard_cifar10.pt", map_location=device))
             model = base
         case ModelTypes.DENSENET:
             base = models.densenet121(
@@ -86,7 +87,7 @@ def setup_model(model):
             base.classifier = nn.Linear(base.classifier.in_features, 10)
 
             base.load_state_dict(
-                load(curr_dir + "models/densenet_standard_cifar10.pt"))
+                load(curr_dir + "models/densenet_standard_cifar10.pt", map_location=device))
             model = base
         case ModelTypes.EFFICIENTNET:
             base = hub.load('NVIDIA/DeepLearningExamples:torchhub',
@@ -94,7 +95,7 @@ def setup_model(model):
             base.classifier.fc = nn.Linear(base.classifier.fc.in_features, 10)
 
             base.load_state_dict(
-                load(curr_dir + "models/efficientnet_standard_cifar10.pt"))
+                load(curr_dir + "models/efficientnet_standard_cifar10.pt", map_location=device))
             model = base
         case ModelTypes.GOOGLENET:
             base = models.googlenet(
@@ -102,7 +103,7 @@ def setup_model(model):
             base.fc = nn.Linear(base.fc.in_features, 10)
 
             base.load_state_dict(
-                load(curr_dir + "models/googlenet_standard_cifar10.pt"))
+                load(curr_dir + "models/googlenet_standard_cifar10.pt", map_location=device))
             model = base
         case ModelTypes.MOBILENET:
             base = models.mobilenet_v2(
@@ -110,7 +111,7 @@ def setup_model(model):
             base.classifier[1] = nn.Linear(base.classifier[1].in_features, 10)
 
             base.load_state_dict(
-                load(curr_dir + "models/mobilenet_standard_cifar10.pt"))
+                load(curr_dir + "models/mobilenet_standard_cifar10.pt", map_location=device))
             model = base
         case ModelTypes.SQUEEZENET:
             base = models.squeezenet1_0(
@@ -119,7 +120,7 @@ def setup_model(model):
                 512, 10, kernel_size=(1, 1), stride=(1, 1))
 
             base.load_state_dict(
-                load(curr_dir + "models/squeezenet_standard_cifar10.pt"))
+                load(curr_dir + "models/squeezenet_standard_cifar10.pt", map_location=device))
             model = base
         case _:
             raise ValueError("Unknown model choice")
