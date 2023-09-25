@@ -13,7 +13,7 @@ Tested layers are Conv2D (Convolutional Layer) and Linear layers. Feel free to e
   <summary>Table of Contents</summary>
   <ol>
     <li>
-      <a href="#about-the-code">About The Code</a>
+      <a href="#about-the-code-and-folders">About The Code and Folders</a>
     </li>
     <li>
       <a href="#getting-started">Getting Started</a>
