@@ -34,9 +34,7 @@ Tested layers are Conv2D (Convolutional Layer) and Linear layers. Feel free to e
 
 ### Try it out here! --> https://baxtrax-feature-visualization-generator-ui.hf.space
 
-
-
-[![image](https://github.com/baxtrax/Feature-Visualization-UI/assets/34373485/226c115e-bb58-40e4-894e-10f5b4282ae5)](https://baxtrax-feature-visualization-generator-ui.hf.space)
+![image](https://github.com/baxtrax/Feature-Visualization-UI/assets/34373485/226c115e-bb58-40e4-894e-10f5b4282ae5)]
 
 
 <!-- Improved compatibility of back to top link: See: https://github.com/othneildrew/Best-README-Template/pull/73 -->
