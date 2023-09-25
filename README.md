@@ -76,7 +76,7 @@ You will need to have some sort of python
 
 1. Clone the repo
    ```bash
-   git@github.com:baxtrax/Feature-Visualization-UI.git
+   git clone git@github.com:baxtrax/Feature-Visualization-UI.git
    ```
 2. Install the required libraries
    ```bash
