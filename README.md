@@ -42,28 +42,24 @@ Tested layers are Conv2D (Convolutional Layer) and Linear layers. Feel free to e
 !!!!!!!!!!!!!!!! IGNORE BELOW UNFINSHED !!!!!!!!!!!!!!!!
 
 <!-- ABOUT THE CODE-->
-## About The Code
+## About The Code and Folders
 
-The javascript code that runs this website is broken into specific modules to help with readiblity. 
+The python code that runs this website is broken into specific modules to help with readiblity. 
 
-* [canvas.js](scripts/canvas.js)
-  * Drawing the lines connecting each button
-  * Updating the canvas
-  * Button creation / tree traversal
-  * Button navigation
-  * Button attractions
-* [interactions.js](scripts/interactions.js)
-  * Model input
-  * Model input interaction
-  * Orchastraction of the creation and visualization of the new model
-* [modelparser.js](scripts/modelparser.js)
-  * Parses pytorch print model input string into a tree data structure (Via. regex)
-  * Cleaning up string input
-* [tree.js](scripts/tree.js)
-  * Tree data structure used to store the model and navigate through
+* [models](models)
+  * Holds all the model checkpoints used for model loading
+* [helpers](helpers)
+  * Holds all the different helper methods utilized in the [main.py](main.py) file
+* [listeners.py](helpers/listeners.py)
+  * All event listener functions used in the main interface
+* [models.py](helpers/models.py)
+  * Functions that deal with model logic, creation, etc.
+* [manipulation.py](helpers/manipulation.py)
+  * Functions that deal with data manipulation and logic
+* [main.py](main.py)
+  * Main interface file. Sets up interface and binds event listeners
 
-> All javascript files are located in the [scripts](scripts) folder.
-
+> Most complex logic (like feature visualization generation) are in their respective [helpers](helpers) folder.
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
 <!-- GETTING STARTED -->
@@ -72,8 +68,10 @@ To get a local copy up and running follow these simple steps.
 
 ### Prerequisites
 
-Make sure to have these setup/installed at a minimum
-* A modern browser that supports javascript
+You will need to have some sort of python
+
+(Optional)
+Setup a python environment (conda or pyenv) to keep your development space tidy.
 
 (Optional)
 * A printed pytorch model output to test with
