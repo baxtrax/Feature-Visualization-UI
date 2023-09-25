@@ -1,4 +1,3 @@
-<!--
 ---
 title: Demo Space
 emoji: 🎨
@@ -8,7 +7,7 @@ sdk: gradio
 app_file: main.py
 pinned: true
 ---
--->
+
 
 # Feature Visualization Generator UI
 
