@@ -71,31 +71,30 @@ To get a local copy up and running follow these simple steps.
 You will need to have some sort of python
 
 (Optional)
-Setup a python environment (conda or pyenv) to keep your development space tidy.
-
-(Optional)
-* A printed pytorch model output to test with
-  * This can be achieved by loading up a pytorch model and printing the model with
-  ```python
-  print(<model variable here>)
-  ```
-    * I will not be going into detail on how to do this as it is out of the scope of this repo.
+* Setup a python environment (conda or pyenv) to keep your development space tidy.
+* A GPU. This will make generation much, much, quicker
 
 ### Installation
 
 1. Clone the repo
-   ```sh
-   git clone git@github.com:baxtrax/Model-Visualizer.git
+   ```bash
+   git@github.com:baxtrax/Feature-Visualization-UI.git
+   ```
+2. Install the required libraries
+   ```bash
+   pip install -r requirements.txt
    ```
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
 <!-- USAGE EXAMPLES -->
 ## Usage
-### HTML launch
-Open the [index.html](index.html) file with a browser or deploy the website with a website deployment software.
-
-I personally used the VScode extension `Live Server` for local development.
-
+### Website launch
+1. Open a console and run the [main.py](main.py) python file
+   ```bash
+   python main.py
+   ```
+2. Click the website link in the console output. It should be on [http://127.0.0.1:7860/](http://127.0.0.1:7860/). This is the default url for gradio.
+> The website should try to match your system preferences for dark or light mode. If not, you can specify dark mode and light mode like so: [http://127.0.0.1:7860/?__theme=dark](http://127.0.0.1:7860/?__theme=dark)
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
 
