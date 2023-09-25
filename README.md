@@ -16,7 +16,7 @@ pinned: true
 
 A Feature Visualization (FV) generator UI. Utilizes the Gradio web framework in conjunction with the [Lucent](https://github.com/greentfrapp/lucent) (Pytorch [Lucid](https://github.com/tensorflow/lucid) framework. Aimed to help others through experiential learning, allowing them to explore different input parameters and settings and quickly see their effects.
 
-Concepts that are used in the FV generation process such as [Channel Decorrelation and Spatial Decorelation](https://distill.pub/2017/feature-visualization/#d-footnote-8:~:text=the%20training%20data.-,Preconditioning%20and%20Parameterization,-In%20the%20previous) are discussed in the Google Brain Feature Visualization article ([Olah, et al.](https://distill.pub/2017/feature-visualization/))
+Concepts that are used in the FV generation process such as [Channel Decorrelation and Spatial Decorelation](https://distill.pub/2017/feature-visualization/#d-footnote-8:~:text=the%20training%20data.-,Preconditioning%20and%20Parameterization,-In%20the%20previous) are discussed in the Google Brain Feature Visualization article ([Olah, et al.](https://distill.pub/2017/feature-visualization/)). More can information can be found by searching through recent Explainable Artifical Intelligence (XAI) papers.
 
 Tested layers are Conv2D (Convolutional Layer) and Linear layers. Feel free to experiment, I can not guarantee that they will optimize correctly.
 
