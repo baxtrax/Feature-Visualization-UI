@@ -8,7 +8,6 @@ A Feature Visualization (FV) generator UI. Utilizes the Gradio web framework in 
 Concepts that are used in the FV generation process such as [Channel Decorrelation and Spatial Decorelation](https://distill.pub/2017/feature-visualization/#d-footnote-8:~:text=the%20training%20data.-,Preconditioning%20and%20Parameterization,-In%20the%20previous) are discussed in the Google Brain Feature Visualization article ([Olah, et al.](https://distill.pub/2017/feature-visualization/)). More can information can be found by searching through recent Explainable Artifical Intelligence (XAI) papers.
 
 Tested layers are Conv2D (Convolutional Layer) and Linear layers. Feel free to experiment, I can not guarantee that they will optimize correctly.
-
 <!-- TABLE OF CONTENTS -->
 <details>
   <summary>Table of Contents</summary>
@@ -39,6 +38,8 @@ Tested layers are Conv2D (Convolutional Layer) and Linear layers. Feel free to e
 
 <!-- Improved compatibility of back to top link: See: https://github.com/othneildrew/Best-README-Template/pull/73 -->
 <a name="readme-top"></a>
+
+!!!!!!!!!!!!!!!! IGNORE BELOW UNFINSHED !!!!!!!!!!!!!!!!
 
 <!-- ABOUT THE CODE-->
 ## About The Code
@@ -111,3 +112,4 @@ I personally used the VScode extension `Live Server` for local development.
 version https://git-lfs.github.com/spec/v1
 oid sha256:8f318c9b980e22dbbcab1dc2c6344e36e3a8c6e9cfa9d7410ed9a798da7b2da1
 size 137
+-->
