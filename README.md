@@ -39,8 +39,6 @@ Tested layers are Conv2D (Convolutional Layer) and Linear layers. Feel free to e
 <!-- Improved compatibility of back to top link: See: https://github.com/othneildrew/Best-README-Template/pull/73 -->
 <a name="readme-top"></a>
 
-!!!!!!!!!!!!!!!! IGNORE BELOW UNFINSHED !!!!!!!!!!!!!!!!
-
 <!-- ABOUT THE CODE-->
 ## About The Code and Folders
 
