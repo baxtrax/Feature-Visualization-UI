@@ -25,7 +25,7 @@ Tested layers are Conv2D (Convolutional Layer) and Linear layers. Feel free to e
     <li>
       <a href="#usage">Usage</a>
       <ul>
-        <li><a href="#html-launch">HTML launch</a></li>
+        <li><a href="#website-launch">Website launch</a></li>
       </ul>
     </li>
   </ol>
